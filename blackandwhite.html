@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Charlotte — Physics & Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #09090f;
+      --surface: #0f0f1a;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e6e0;
+      --muted: rgba(232,230,224,0.45);
+      --accent: #c8a97e;
+      --accent2: #7eb8c8;
+      --glow: rgba(200,169,126,0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* GRID BACKGROUND */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NOISE TEXTURE */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 20px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9,9,15,0.8);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* SECTIONS */
+    section {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 48px;
+    }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 80px;
+      max-width: 100%;
+      padding-left: 48px;
+      padding-right: 48px;
+    }
+
+    .hero-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.2s forwards;
+    }
+
+    .hero-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(72px, 10vw, 140px);
+      font-weight: 300;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      opacity: 0;
+      animation: fadeUp 0.8s 0.4s forwards;
+    }
+
+    .hero-name em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      margin-top: 40px;
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.9;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.6s forwards;
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 16px;
+      margin-top: 48px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.8s forwards;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      transition: background 0.2s, color 0.2s;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .btn-ghost {
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+
+    /* ORBIT GRAPHIC */
+    .hero-graphic {
+      position: absolute;
+      right: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 320px;
+      height: 320px;
+      opacity: 0;
+      animation: fadeIn 1.2s 1s forwards;
+    }
+
+    .orbit-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(200,169,126,0.2);
+    }
+
+    .orbit-ring:nth-child(1) {
+      inset: 0;
+      animation: spin 18s linear infinite;
+    }
+
+    .orbit-ring:nth-child(2) {
+      inset: 40px;
+      border-color: rgba(126,184,200,0.15);
+      animation: spin 28s linear infinite reverse;
+    }
+
+    .orbit-ring:nth-child(3) {
+      inset: 80px;
+      border-color: rgba(200,169,126,0.1);
+      animation: spin 40s linear infinite;
+    }
+
+    .orbit-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      top: -3px;
+      left: 50%;
+      margin-left: -3px;
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .orbit-dot-2 {
+      background: var(--accent2);
+      box-shadow: 0 0 10px var(--accent2);
+      top: auto;
+      bottom: -3px;
+    }
+
+    .orbit-center {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    /* DIVIDER */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ABOUT */
+    #about {
+      padding-top: 120px;
+      padding-bottom: 120px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 48px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      max-width: 120px;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+
+    .about-text h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 42px;
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 24px;
+    }
+
+    .about-text h2 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .about-text p {
+      color: var(--muted);
+      line-height: 1.9;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+
+    .about-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .meta-item {
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .meta-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--accent);
+    }
+
+    .meta-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .meta-value {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    /* SKILLS */
+    #skills {
+      padding-bottom: 120px;
+    }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .skill-cell {
+      background: var(--bg);
+      padding: 32px;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .skill-cell:hover {
+      background: var(--surface);
+    }
+
+    .skill-cell:hover .skill-glow {
+      opacity: 1;
+    }
+
+    .skill-glow {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .skill-category {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 12px;
+    }
+
+    .skill-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .skill-detail {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* PROJECTS */
+    #projects {
+      padding-bottom: 120px;
+    }
+
+    .projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .project-row {
+      background: var(--bg);
+      padding: 40px;
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 32px;
+      align-items: start;
+      transition: background 0.2s;
+      cursor: default;
+    }
+
+    .project-row:hover {
+      background: var(--surface);
+    }
+
+    .project-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 48px;
+      font-weight: 300;
+      color: var(--border);
+      line-height: 1;
+      user-select: none;
+    }
+
+    .project-row:hover .project-num {
+      color: rgba(200,169,126,0.3);
+    }
+
+    .project-content h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 400;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .project-content p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 520px;
+    }
+
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .project-year {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      white-space: nowrap;
+      padding-top: 6px;
+    }
+
+    /* CONTACT */
+    #contact {
+      padding-bottom: 120px;
+    }
+
+    .contact-inner {
+      border: 1px solid var(--border);
+      padding: 64px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-inner::before {
+      content: '';
+      position: absolute;
+      top: -100px; right: -100px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: var(--glow);
+      filter: blur(60px);
+      pointer-events: none;
+    }
+
+    .contact-text h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 52px;
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .contact-text h2 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .contact-text p {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .contact-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 16px 20px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      transition: all 0.2s;
+    }
+
+    .contact-link:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .contact-link-icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .contact-link-label {
+      flex: 1;
+      letter-spacing: 0.05em;
+    }
+
+    .contact-link-arrow {
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+
+    .contact-link:hover .contact-link-arrow {
+      transform: translateX(4px);
+    }
+
+    /* FOOTER */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 24px 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer p {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* SCROLL REVEAL */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      nav { padding: 16px 24px; }
+      section { padding: 0 24px; }
+      #hero { padding-left: 24px; padding-right: 24px; }
+      .hero-graphic { display: none; }
+      .about-grid { grid-template-columns: 1fr; gap: 48px; }
+      .skills-grid { grid-template-columns: 1fr 1fr; }
+      .project-row { grid-template-columns: 48px 1fr; }
+      .project-year { display: none; }
+      .contact-inner { grid-template-columns: 1fr; padding: 40px 32px; gap: 40px; }
+      .section-divider { margin: 0 24px; }
+      footer { padding: 24px; flex-direction: column; gap: 8px; text-align: center; }
+    }
+
+    @media (max-width: 600px) {
+      .skills-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .hero-links { flex-direction: column; }
+      .btn { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">C.T.</div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Work</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <div id="hero" style="position:relative;">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">MSc Theoretical Physics · King's College London</p>
+      <h1 class="hero-name">
+        Char<em>lotte</em>
+      </h1>
+      <p class="hero-desc">
+        Physicist turned data engineer. I build ML pipelines, classify language at scale, and occasionally think about quantum field theory. Currently looking for roles in data science, ML engineering, and quant-adjacent work.
+      </p>
+      <div class="hero-links">
+        <a href="#projects" class="btn">View Work</a>
+        <a href="#contact" class="btn btn-ghost">Get in Touch</a>
+      </div>
+    </div>
+
+    <!-- ORBIT GRAPHIC -->
+    <div class="hero-graphic">
+      <div class="orbit-ring"><div class="orbit-dot"></div></div>
+      <div class="orbit-ring"><div class="orbit-dot orbit-dot-2"></div></div>
+      <div class="orbit-ring"></div>
+      <div class="orbit-center"></div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="section-label">About</div>
+    <div class="about-grid reveal">
+      <div class="about-text">
+        <h2>Physics mind,<br /><em>engineering</em> hands</h2>
+        <p>
+          I'm a theoretical physics MSc student at King's College London, supervised by Professor Christopher Herzog. My thesis sits at the intersection of mathematical physics and computational methods.
+        </p>
+        <p>
+          Outside academia, I'm an intern at Campaign Lab — a political tech organisation — where I've built Meta API integrations, web scrapers, structured databases, and LLM classification pipelines for large-scale political data analysis.
+        </p>
+        <p>
+          I've ruled out academia as a long-term path. I'm drawn to roles where rigorous thinking meets real systems: ML engineering, data science, and quant-adjacent work.
+        </p>
+      </div>
+      <div class="about-meta">
+        <div class="meta-item">
+          <div class="meta-label">Education</div>
+          <div class="meta-value">MSc Theoretical Physics<br/>King's College London, 2025<br/>BSc Physics with Philosophy</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Currently</div>
+          <div class="meta-value">Data Engineering Intern<br/>Campaign Lab · London</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Location</div>
+          <div class="meta-value">London, United Kingdom</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Open to</div>
+          <div class="meta-value">Data Science · ML Engineering<br/>Quant-adjacent · Technical Roles</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="section-label" style="margin-top:80px;">Skills</div>
+    <div class="skills-grid reveal">
+      <div class="skill-cell">
+        <div class="skill-glow"></div>
+        <div class="skill-category">Core Language</div>
+        <div class="skill-name">Python</div>
+        <div class="skill-detail">PyTorch, Pandas, NumPy, Scikit-learn. Primary language for ML pipelines and data engineering.</div>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-glow"></div>
+        <div class="skill-category">Machine Learning</div>
+        <div class="skill-name">PyTorch</div>
+        <div class="skill-detail">Neural network design, training pipelines, PCA/t-SNE interpretability analysis.</div>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-glow"></div>
+        <div class="skill-category">Data</div>
+        <div class="skill-name">SQL</div>
+        <div class="skill-detail">Structured database design and querying. Experience with large-scale political data sets.</div>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-glow"></div>
+        <div class="skill-category">Systems</div>
+        <div class="skill-name">C</div>
+        <div class="skill-detail">Low-level programming. Strong foundation in memory management and system design.</div>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-glow"></div>
+        <div class="skill-category">Web & APIs</div>
+        <div class="skill-name">JavaScript</div>
+        <div class="skill-detail">Node.js, Meta Graph API integrations, web scraping, document generation pipelines.</div>
+      </div>
+      <div class="skill-cell">
+        <div class="skill-glow"></div>
+        <div class="skill-category">Scientific Computing</div>
+        <div class="skill-name">Mathematica</div>
+        <div class="skill-detail">Symbolic computation for theoretical physics. QFT calculations and analytic derivations.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="section-label" style="margin-top:80px;">Selected Work</div>
+    <div class="projects-list reveal">
+
+      <div class="project-row">
+        <div class="project-num">01</div>
+        <div class="project-content">
+          <h3>Neural Network Classifier</h3>
+          <p>Designed and trained a deep neural network achieving 98% classification accuracy. Applied PCA and t-SNE for interpretability analysis, visualising learned representations in feature space.</p>
+          <div class="project-tags">
+            <span class="tag">PyTorch</span>
+            <span class="tag">PCA</span>
+            <span class="tag">t-SNE</span>
+            <span class="tag">Interpretability</span>
+          </div>
+        </div>
+        <div class="project-year">2024–25</div>
+      </div>
+
+      <div class="project-row">
+        <div class="project-num">02</div>
+        <div class="project-content">
+          <h3>Campaign Intelligence Dashboard</h3>
+          <p>Built a political intelligence system analysing discourse across UK Facebook groups. Programmatic report generation via Node.js, LLM classification pipelines, and an HTML dashboard for real-time political data visualisation.</p>
+          <div class="project-tags">
+            <span class="tag">LLM Classification</span>
+            <span class="tag">Node.js</span>
+            <span class="tag">Meta API</span>
+            <span class="tag">Data Viz</span>
+          </div>
+        </div>
+        <div class="project-year">2024–25</div>
+      </div>
+
+      <div class="project-row">
+        <div class="project-num">03</div>
+        <div class="project-content">
+          <h3>Digital Voter Outreach Platform</h3>
+          <p>Ran non-partisan digital advertising campaigns targeting low-turnout areas across the UK. Built QR code tracking infrastructure using Short.io for leaflet distribution campaign attribution, with Meta Ads audience targeting and analytics.</p>
+          <div class="project-tags">
+            <span class="tag">Meta Ads</span>
+            <span class="tag">Campaign Analytics</span>
+            <span class="tag">Tracking</span>
+          </div>
+        </div>
+        <div class="project-year">2025</div>
+      </div>
+
+      <div class="project-row">
+        <div class="project-num">04</div>
+        <div class="project-content">
+          <h3>MSc Thesis — Theoretical Physics</h3>
+          <p>Research under Professor Christopher Herzog at King's College London. Coursework spanning quantum field theory, canonical quantization, path integral methods, Faddeev-Popov gauge fixing, and the Fujikawa method.</p>
+          <div class="project-tags">
+            <span class="tag">QFT</span>
+            <span class="tag">Gauge Theory</span>
+            <span class="tag">Mathematica</span>
+            <span class="tag">KCL</span>
+          </div>
+        </div>
+        <div class="project-year">2024–25</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-label" style="margin-top:80px;">Contact</div>
+    <div class="contact-inner reveal">
+      <div class="contact-text">
+        <h2>Let's work<br /><em>together</em></h2>
+        <p>
+          I'm actively looking for roles in data science, ML engineering, and quant-adjacent positions. If you're hiring or want to talk about a project, I'd love to hear from you.
+        </p>
+      </div>
+      <div class="contact-links">
+        <a href="mailto:your@email.com" class="contact-link">
+          <span class="contact-link-icon">✉</span>
+          <span class="contact-link-label">your@email.com</span>
+          <span class="contact-link-arrow">→</span>
+        </a>
+        <a href="https://linkedin.com/in/yourprofile" target="_blank" class="contact-link">
+          <span class="contact-link-icon">in</span>
+          <span class="contact-link-label">LinkedIn</span>
+          <span class="contact-link-arrow">→</span>
+        </a>
+        <a href="https://github.com/yourusername" target="_blank" class="contact-link">
+          <span class="contact-link-icon">⌥</span>
+          <span class="contact-link-label">GitHub</span>
+          <span class="contact-link-arrow">→</span>
+        </a>
+        <a href="/cv.pdf" class="contact-link">
+          <span class="contact-link-icon">↓</span>
+          <span class="contact-link-label">Download CV</span>
+          <span class="contact-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Charlotte · MSc Theoretical Physics, KCL</p>
+    <p>London, 2025</p>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    reveals.forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
